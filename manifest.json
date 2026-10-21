@@ -1,0 +1,76 @@
+{
+  "display_information": {
+    "name": "ReleaseBot (local)",
+    "description": "Cuts SDK releases in code channels and connects Slackbot to GitHub"
+  },
+  "features": {
+    "app_home": {},
+    "bot_user": {
+      "display_name": "ReleaseBot (local)",
+      "always_online": true
+    },
+    "code_channels": {
+      "enabled": true
+    }
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "app_mentions:read",
+        "canvases:write",
+        "channels:history",
+        "chat:write",
+        "code_channels:manage",
+        "groups:history",
+        "mcp:connect"
+      ]
+    }
+  },
+  "settings": {
+    "socket_mode_enabled": true,
+    "org_deploy_enabled": true,
+    "interactivity": {
+      "is_enabled": true
+    },
+    "event_subscriptions": {
+      "bot_events": [
+        "agent_session_stopped",
+        "app_mention",
+        "message.session"
+      ]
+    },
+    "token_rotation_enabled": false
+  },
+  "external_auth_providers": {
+    "oauth2": {
+      "mcp_github": {
+        "options": {
+          "authorization_url": "https://github.com/login/oauth/authorize",
+          "client_id": "Ov23litkDLOgk6XEjlJE",
+          "identity_config": {
+            "account_identifier": "$.login",
+            "url": "https://api.github.com/user"
+          },
+          "provider_name": "GitHub",
+          "scope": [
+            "repo",
+            "read:org"
+          ],
+          "token_url": "https://github.com/login/oauth/access_token",
+          "token_url_config": {
+            "use_basic_auth_scheme": false
+          },
+          "use_pkce": false
+        },
+        "provider_type": "CUSTOM"
+      }
+    }
+  },
+  "mcp_servers": {
+    "github": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "auth_provider_key": "mcp_github",
+      "auth_type": "manual_auth"
+    }
+  }
+}
