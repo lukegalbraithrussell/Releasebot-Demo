@@ -4,7 +4,9 @@
     "description": "Cuts SDK releases in code channels and connects Slackbot to GitHub"
   },
   "features": {
-    "app_home": {},
+    "app_home": {
+      "home_tab_enabled": true
+    },
     "bot_user": {
       "display_name": "ReleaseBot (local)",
       "always_online": true
@@ -19,6 +21,7 @@
         "app_mentions:read",
         "canvases:write",
         "channels:history",
+        "channels:manage",
         "chat:write",
         "code_channels:manage",
         "groups:history",
@@ -35,6 +38,7 @@
     "event_subscriptions": {
       "bot_events": [
         "agent_session_stopped",
+        "app_home_opened",
         "app_mention",
         "message.session"
       ]

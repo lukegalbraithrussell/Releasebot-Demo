@@ -1,8 +1,10 @@
 import difflib
 import json
 import os
+import re
 import urllib.request
 from dataclasses import dataclass, field
+from datetime import datetime
 
 
 @dataclass
@@ -10,6 +12,8 @@ class Change:
     title: str
     url: str
     author: str
+    author_url: str
+    merged_at: datetime
 
 
 @dataclass
@@ -18,7 +22,13 @@ class Release:
     version: str
     previous_tag: str = ""
     default_branch: str = "main"
+    origin_ts: str = ""
     changes: list = field(default_factory=list)
+    excluded: set = field(default_factory=set)
+
+    @property
+    def included(self):
+        return [change for change in self.changes if change.url not in self.excluded]
 
     @property
     def repo_url(self):
@@ -34,9 +44,10 @@ class Release:
 
     @property
     def session_id(self):
-        return f"release-{self.repo.replace('/', '-')}-{self.version}"
+        return f"release-{self.repo.replace('/', '-')}-{self.version}-{self.origin_ts}"
 
 
+CHANGE_TYPES = ["feat", "fix", "perf", "refactor", "docs", "test", "ci", "build", "chore", "deps", "other"]
 FILLER_WORDS = {"a", "an", "the", "cut", "ship", "please", "release", "new", "version", "for", "of", "to"}
 
 
@@ -91,6 +102,8 @@ def to_change(commit):
         title=commit["commit"]["message"].splitlines()[0],
         url=commit["html_url"],
         author=author.get("login", commit["commit"]["author"]["name"]),
+        author_url=author.get("html_url", ""),
+        merged_at=datetime.fromisoformat(commit["commit"]["committer"]["date"]),
     )
 
 
@@ -98,9 +111,17 @@ def is_dependency_bump(change):
     return "deps" in change.title.split(":")[0]
 
 
+def change_type(change):
+    if is_dependency_bump(change):
+        return "deps"
+    match = re.match(r"(\w+)(\(.*?\))?!?:", change.title)
+    prefix = match.group(1).lower() if match else "other"
+    return prefix if prefix in CHANGE_TYPES else "other"
+
+
 def changelog_section(release):
-    features = [change for change in release.changes if not is_dependency_bump(change)]
-    dependencies = [change for change in release.changes if is_dependency_bump(change)]
+    features = [change for change in release.included if not is_dependency_bump(change)]
+    dependencies = [change for change in release.included if is_dependency_bump(change)]
     lines = [f"## {release.version}", ""]
     if features:
         lines += ["### Changes", ""] + [f"- {change.title} by @{change.author}" for change in features] + [""]
@@ -126,7 +147,7 @@ def release_notes_markdown(release):
         [
             f"# {release.repo} {release.version}",
             "",
-            f"{len(release.changes)} changes since [{release.previous_tag}]({release.compare_url}).",
+            f"{len(release.included)} changes since [{release.previous_tag}]({release.compare_url}).",
             "",
         ]
         + changelog_section(release)[2:]
